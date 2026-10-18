@@ -11,15 +11,23 @@ Predicting extreme-heat maps over the Indian region from a short history of ERA5
 
 ## Motivation
 
-Climate change is increasing the frequency and intensity of extremes such as heatwaves, floods, droughts and cyclones. Accurate prediction matters for disaster management, agriculture, water planning and public safety. Machine learning and deep learning capture the nonlinear relationships among atmospheric variables well, but most models are **black boxes**: forecasters and decision-makers cannot see *why* a warning is issued, which limits trust.
+Climate change is increasing the frequency and intensity of extremes such as heatwaves, floods, droughts and cyclones. Accurate prediction matters for disaster management, agriculture, water planning and public safety. Machine learning and deep learning capture the nonlinear relationships among atmospheric variables well, but most models are **black boxes**: forecasters and decision-makers cannot see *why* a warning is issued, which limits trust. Explainable AI (XAI) addresses this by providing transparency and interpretability, so people can see which factors drive a prediction.
 
 **Problem statement.** Existing AI models can predict climate extremes effectively, but their lack of interpretability makes the predictions hard to understand, trust and act on in critical decisions.
 
 ### Why explainability matters (illustrative example)
 
-| Without XAI | With XAI |
-|---|---|
-| "Extreme wildlife risk in Region X tomorrow." Is it the wind, a long drought, or a model glitch? Is that enough to evacuate a city? | "Extreme wildlife risk in Region X tomorrow, because soil moisture is 80% below normal and wind speed is 40% above normal." |
+| | Without XAI (traditional AI) | With XAI (explainable AI) |
+|---|---|---|
+| **Input** | 10 years of satellite and atmospheric data | 10 years of satellite and atmospheric data |
+| **Model** | Deep neural network | Deep neural network + XAI layer |
+| **Output** | "Extreme wildlife risk in Region X tomorrow." | "Extreme wildlife risk in Region X tomorrow." |
+| **Human reaction / explanation** | "Why? Is it the high wind, the 3-month drought, or has the AI glitched? Can we trust this enough to evacuate a city?" | "Risk is high because soil moisture is 80% below normal and wind speed is 40% above normal." |
+
+### Related work
+
+- **Deep learning for climate prediction:** CNNs, LSTMs and Transformer networks have been used to forecast rainfall, temperature anomalies and extreme weather. They are accurate but often lack interpretability.
+- **Machine learning in weather forecasting:** Random Forest, XGBoost and Support Vector Machines have been applied to flood prediction, drought monitoring and heatwave forecasting.
 
 ### Research gaps addressed
 
@@ -62,12 +70,12 @@ This repository currently implements everything up to **Prediction** for heatwav
 | Variables | 2 m temperature, relative humidity, mean sea-level pressure, total precipitation, 10 m wind speed (derived from u10 and v10) |
 | Planned | SMAP soil moisture, as an additional predictor and for explanations |
 
-The raw `.nc` files are too large for GitHub and are not included. They can be downloaded from the [Copernicus Climate Data Store](https://cds.climate.copernicus.eu/).
+The five NetCDF files are included in the [`data/`](data/) folder (see [`data/README.md`](data/README.md) for variables and units). Source: ERA5, Copernicus Climate Change Service ([Climate Data Store](https://cds.climate.copernicus.eu/)).
 
 ## Method
 
 1. **Load and align** the five variable files, snapping every timestamp to the first day of its month and keeping only months present in all files (inner join). No imputation is used.
-2. **Label.** A grid cell is marked as an extreme-heat event when its temperature exceeds the 90th percentile for that grid cell and calendar month, computed on the **training period only**.
+2. **Label.** A grid cell is marked as an extreme-heat event when its temperature exceeds the 90th percentile for that grid cell and calendar month, computed on the **training period only**. With monthly data this is an "extreme-heat month" label, not an operational heatwave definition.
 3. **Chronological split:** 70% train, 15% validation, 15% test, with no shuffling across time.
 4. **Sequences.** A 7-step window of the 5 variables is used to predict the next step.
 5. **Normalization.** Per-variable mean and standard deviation from the training set only.
@@ -124,11 +132,11 @@ Run with the corrected pipeline: 324 monthly steps, no missing values, 42 test s
 
 ### Findings
 
-1. **Persistence is the only method with real skill.** Last value reaches F1 0.570 and ROC-AUC 0.665, above the trivial 0.530. Anomalies persist from month to month.
-2. **Climatology, CNN and GCN-LSTM collapsed to "event everywhere".** Their F1 of 0.5296 equals the trivial classifier exactly, and their ROC-AUC (0.44 to 0.50) shows no ranking skill. ConvLSTM is only partly collapsed and scores below the trivial value.
-3. **The networks are not learning.** Training loss is flat from the first epoch and validation loss does not improve (below), and the ConvLSTM probability map is almost uniform.
+1. **Persistence is the only method with real skill.** Last value reaches F1 0.570 and ROC-AUC 0.665, above the trivial 0.530, which is consistent with temperature anomalies persisting from month to month.
+2. **Climatology, CNN and GCN-LSTM collapsed to "event everywhere".** Their F1 of 0.5296 equals the trivial classifier exactly, and their ROC-AUC (0.44 to 0.50) shows no ranking skill. A recall of 1.00 is not a strength here: it comes from flagging every pixel, which would mean constant false alarms in practice. ConvLSTM is only partly collapsed and scores below the trivial value.
+3. **The networks are not learning.** Training loss barely changes after the first epoch and validation loss does not improve (below), and the ConvLSTM probability map is almost uniform.
 4. **The event rate shifts strongly over time.** The label is the 90th percentile of the training period, and the event frequency rises from 10.2% (training, 1998 to 2016) to 23.8% (validation) and 36.0% (test). This is consistent with a warming climate. Climatology's test ROC-AUC below 0.5 shows that past spatial patterns do not carry over.
-5. **Why the models likely fail (hypotheses to test):** only about 226 training sequences for models with many parameters; the shifted validation set pushes threshold selection to "predict everything"; class weights were set for a 10% event rate; and the monthly resolution is coarse.
+5. **Why the models likely fail (hypotheses to test):** only about 220 training sequences (226 monthly steps) for models with many parameters; the shifted validation set pushes threshold selection to "predict everything"; class weights were set for a 10% event rate; and the monthly resolution is coarse.
 
 ![Learning curves](images/learning_curves.png)
 
@@ -142,7 +150,8 @@ Run with the corrected pipeline: 324 monthly steps, no missing values, 42 test s
 | NaNs were filled with the global mean | Two thirds of input maps were constant, inflating scores | **Fixed.** No imputation |
 | Single global 95th-percentile label computed on all data | Marked permanently hot regions and leaked test data | **Fixed.** Per-cell, per-calendar-month threshold from training years only |
 | Label is not stationary | Event rate 10% to 24% to 36% across splits; thresholds and class weights do not transfer | **Open.** See roadmap |
-| Monthly means and about 226 training sequences | Too little data for deep models; monthly means cannot represent multi-day heatwaves | **Open.** Move to daily data |
+| Monthly means and about 220 training sequences | Too little data for deep models; monthly means cannot represent multi-day heatwaves | **Open.** Move to daily data |
+| Results come from a single run (seed 42) | No estimate of run-to-run variation | **Open.** Multiple seeds on the roadmap |
 
 ## Roadmap
 
@@ -167,10 +176,13 @@ Era5-heatwave-forecasting/
 ├── README.md
 ├── notebooks/
 │   └── Heatwave_Forecasting_Using_ERA5_dataset.ipynb
-├── src/
-│   └── corrected_preprocessing_cells.py
-├── presentation/
-│   └── Priyanshu_NITD_mainppt.pptx
+├── data/
+│   ├── README.md
+│   ├── windspeed.nc
+│   ├── temperature.nc
+│   ├── rainfall.nc
+│   ├── pressure.nc
+│   └── humidity.nc
 ├── images/                 (result plots)
 └── requirements.txt
 ```
@@ -178,8 +190,8 @@ Era5-heatwave-forecasting/
 ## How to run
 
 1. Open the notebook in Google Colab with the badge above and select a GPU runtime.
-2. Put the ERA5 NetCDF files in Google Drive and update the paths in the first cells.
-3. Use the functions in `src/corrected_preprocessing_cells.py` for loading, alignment and labelling, in place of the original merge, imputation and label cells.
+2. The notebook clones this repository and reads the five NetCDF files from `data/`. No Google Drive setup is needed.
+3. The data-loading cell contains the corrected pipeline (month alignment, no imputation, training-only percentile label).
 4. Run all cells from top to bottom.
 
 Main libraries: `xarray`, `netCDF4`, `numpy`, `pandas`, `scikit-learn`, `torch`, `matplotlib`.
@@ -188,12 +200,10 @@ Main libraries: `xarray`, `netCDF4`, `numpy`, `pandas`, `scikit-learn`, `torch`,
 
 - Ribeiro, M. T., Singh, S., and Guestrin, C. (2016). "Why should I trust you?": Explaining the predictions of any classifier (LIME). *Proceedings of KDD 2016.*
 - Lundberg, S. M., and Lee, S.-I. (2017). A unified approach to interpreting model predictions (SHAP). *Advances in Neural Information Processing Systems 30.*
-- Jacques-Dumas, V., et al. (2022). *Deep neural networks to predict heatwaves.* https://doi.org/10.3389/fclim.2022.789641
 - Pellicer-Valero, O. J., et al. (2025). *Explainable Earth Surface Forecasting Under Extreme Events.* https://doi.org/10.1029/2024EF005446
-- Hersbach, H., et al. (2020). The ERA5 global reanalysis. *Quarterly Journal of the Royal Meteorological Society*, 146, 1999-2049.
 
 ## Author
 
-**Priyanshu Raj**, Department of Computer Science and Engineering, Indian Institute of Technology, Patna.
+**Priyanshu Raj**, Department of Computer Science and Engineering, Indian Institute of Technology,Patna.
 
 Contact: priyanshuraj767761@gmail.com · [GitHub](https://github.com/iitianpriyanshu2006-blip)
