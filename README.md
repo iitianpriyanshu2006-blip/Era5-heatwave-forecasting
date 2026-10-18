@@ -194,5 +194,5 @@ Main libraries: `xarray`, `netCDF4`, `numpy`, `pandas`, `scikit-learn`, `torch`,
 
 ## Author
 
-**Priyanshu Raj**, Department of Computer Science and Engineering, Indian Institute of Technology, Patna
+**Priyanshu Raj**, Department of Computer Science and Engineering, Indian Institute of Technology, Patna..
 Contact: priyanshuraj767761@gmail.com · [GitHub](https://github.com/iitianpriyanshu2006-blip)
