@@ -5,7 +5,7 @@ Predicting extreme-heat maps over the Indian region from a short history of ERA5
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/iitianpriyanshu2006-blip/Era5-heatwave-forecasting/blob/main/notebooks/Heatwave_Forecasting_Using_ERA5_dataset.ipynb)
 ![Status](https://img.shields.io/badge/status-work%20in%20progress-orange)
 
-> **Status: work in progress.** After fixing a data-alignment bug (see [Known issues](#known-issues-and-status)), the first clean benchmark shows that none of the deep models beats a simple persistence baseline at monthly resolution. The causes are diagnosed below, and the next steps (stationary labels, daily data) are on the [roadmap](#roadmap). The explainability stage (SHAP and LIME) is planned and will be applied once a model shows real skill.
+> **Status: work in progress.** After fixing a data-alignment bug (see [Known issues](#known-issues-and-status)), the first clean benchmark shows that none of the deep models beats a simple persistence baseline at monthly resolution. The causes are diagnosed below, and the next steps (stationary labels, daily data) are on the [roadmap](#roadmap). The explainability stage (SHAP,using Gradient SHAP) is planned and will be applied once a model shows real skill.
 
 ---
 
@@ -41,7 +41,7 @@ Climate change is increasing the frequency and intensity of extremes such as hea
 1. Develop an explainable AI framework for climate-extreme prediction
 2. Collect and preprocess historical climate datasets
 3. Build ML / deep-learning models for predicting extreme events
-4. Integrate explainability techniques (SHAP and LIME)
+4. Integrate explainability techniques (SHAP,using Gradient SHAP)
 5. Support disaster management and climate-related decision-making
 
 ### Proposed framework
@@ -95,9 +95,7 @@ The five NetCDF files are included in the [`data/`](data/) folder (see [`data/RE
 
 ### Planned explainability
 
-- **SHAP** (Lundberg and Lee, 2017) for global and per-prediction feature importance
-- **LIME** (Ribeiro et al., 2016) for local explanations of individual predictions
-- Feature-importance visualizations and an interpretable decision-support view
+- **SHAP** (Lundberg and Lee, 2017) for global and per-prediction feature importance, applied through **Gradient SHAP** in the Captum library. This is a gradient-based variant that is efficient for deep models with map inputs, and it was also tested by Pellicer-Valero et al. (2025).
 
 ## Results
 
@@ -161,7 +159,7 @@ Run with the corrected pipeline: 324 monthly steps, no missing values, 42 test s
 - [ ] Move to daily ERA5 (daily maximum 2 m temperature) for far more training samples, with an operational heatwave definition (for example IMD criteria or at least 3 consecutive days above a local percentile)
 - [ ] Fix the model collapse: smaller or more regularized networks, seasonal cycle and persistence as extra inputs, anomaly targets
 - [ ] Multiple random seeds with confidence intervals
-- [ ] Add SHAP and LIME explanations once a model clearly beats the persistence baseline
+- [ ] Add SHAP explanations (Gradient SHAP) once a model clearly beats the persistence baseline
 - [ ] Add SMAP soil moisture as a predictor
 - [ ] Extend the framework to other extremes (droughts, floods)
 
@@ -198,7 +196,6 @@ Main libraries: `xarray`, `netCDF4`, `numpy`, `pandas`, `scikit-learn`, `torch`,
 
 ## References
 
-- Ribeiro, M. T., Singh, S., and Guestrin, C. (2016). "Why should I trust you?": Explaining the predictions of any classifier (LIME). *Proceedings of KDD 2016.*
 - Lundberg, S. M., and Lee, S.-I. (2017). A unified approach to interpreting model predictions (SHAP). *Advances in Neural Information Processing Systems 30.*
 - Pellicer-Valero, O. J., et al. (2025). *Explainable Earth Surface Forecasting Under Extreme Events.* https://doi.org/10.1029/2024EF005446
 
