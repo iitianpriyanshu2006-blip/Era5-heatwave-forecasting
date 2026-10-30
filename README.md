@@ -153,14 +153,26 @@ Run with the corrected pipeline: 324 monthly steps, no missing values, 42 test s
 
 ## Roadmap
 
+## Roadmap
+
+
+**Done**
 - [x] Diagnose and fix the time-alignment and imputation problem
 - [x] Re-run all five models with the corrected pipeline
-- [ ] Make the label stationary (for example a percentile from a fixed reference climatology, or detrended anomalies) so event frequency is comparable across splits
-- [ ] Move to daily ERA5 (daily maximum 2 m temperature) for far more training samples, with an operational heatwave definition (for example IMD criteria or at least 3 consecutive days above a local percentile)
-- [ ] Fix the model collapse: smaller or more regularized networks, seasonal cycle and persistence as extra inputs, anomaly targets
+
+**Next: fix the data and the target**
+- [ ] Make the label stationary (a percentile from a fixed reference climatology, or detrended anomalies) so event frequency is comparable across splits
+- [ ] Predict the anomaly relative to a causal climatology as a continuous target, as in the paper, and derive heatwave events from the predicted anomaly; report skill relative to the persistence and climatology baselines
+- [ ] Move to daily ERA5 (daily maximum 2 m temperature) for far more training samples, with an operational heatwave definition (for example IMD criteria or at least 3 consecutive days above a local percentile), and train on map patches to increase the sample count
+
+**Then: improve the models**
+- [ ] Fix the model collapse: smaller or more regularized networks, with the seasonal cycle and persistence as extra inputs
+- [ ] Add soil moisture (SMAP) and other meteorological drivers as predictors
+- [ ] Evaluate separately on known extreme-heat periods, not only on the full test set, as the paper does for extreme events
 - [ ] Multiple random seeds with confidence intervals
-- [ ] Add SHAP explanations (Gradient SHAP) once a model clearly beats the persistence baseline
-- [ ] Add SMAP soil moisture as a predictor
+
+**Finally: explainability and extension**
+- [ ] Add explanations once a model clearly beats the persistence baseline: SHAP (Gradient SHAP) and, as in the paper, Integrated Gradients, to show which variables and time steps drive the predictions
 - [ ] Extend the framework to other extremes (droughts, floods)
 
 ## Potential applications
