@@ -1,4 +1,4 @@
-# Explainable AI for Climate Extremes: Heatwave Forecasting over India with ERA5
+# Explainable AI for Climate Extremes: Heatwave Forecasting over India.
 
 Predicting extreme-heat maps over the Indian region from a short history of ERA5 meteorological fields. Five approaches are compared (two naive baselines and three neural networks: CNN, ConvLSTM, GCN-LSTM) as the forecasting stage of a larger **explainable AI framework for climate-extreme prediction**.
 
